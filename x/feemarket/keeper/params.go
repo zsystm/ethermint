@@ -30,8 +30,8 @@ func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
 
 // GetBaseFeeEnabled returns true if base fee is enabled
 func (k Keeper) GetBaseFeeEnabled(ctx sdk.Context) bool {
-	var noBaseFee bool
-	var enableHeight int64
+	noBaseFee := false
+	enableHeight := int64(0)
 	k.paramSpace.GetIfExists(ctx, types.ParamStoreKeyNoBaseFee, &noBaseFee)
 	k.paramSpace.GetIfExists(ctx, types.ParamStoreKeyEnableHeight, &enableHeight)
 	return !noBaseFee && ctx.BlockHeight() >= enableHeight
