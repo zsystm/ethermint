@@ -14,6 +14,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/telemetry"
 
 	"github.com/spf13/cobra"
 
@@ -229,6 +230,16 @@ func startStandAlone(ctx *server.Context, opts StartOptions) error {
 	}
 
 	app := opts.AppCreator(ctx.Logger, db, traceWriter, ctx.Viper)
+
+	config, err := config.GetConfig(ctx.Viper)
+	if err != nil {
+		return err
+	}
+
+	_, err = startTelemetry(config)
+	if err != nil {
+		return err
+	}
 
 	svr, err := abciserver.NewServer(addr, transport, app)
 	if err != nil {
@@ -455,10 +466,18 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, opts StartOpt
 		}
 	}
 
+	metrics, err := startTelemetry(config)
+	if err != nil {
+		return err
+	}
+
 	var apiSrv *api.Server
 	if config.API.Enable {
 		apiSrv = api.New(clientCtx, ctx.Logger.With("server", "api"))
 		app.RegisterAPIRoutes(apiSrv, config.API)
+		if config.Telemetry.Enabled {
+			apiSrv.SetTelemetry(metrics)
+		}
 		errCh := make(chan error)
 		go func() {
 			if err := apiSrv.Start(config.Config); err != nil {
@@ -600,4 +619,11 @@ func openTraceWriter(traceWriterFile string) (w io.Writer, err error) {
 		os.O_WRONLY|os.O_APPEND|os.O_CREATE,
 		0o600,
 	)
+}
+
+func startTelemetry(cfg config.Config) (*telemetry.Metrics, error) {
+	if !cfg.Telemetry.Enabled {
+		return nil, nil
+	}
+	return telemetry.New(cfg.Telemetry)
 }
