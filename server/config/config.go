@@ -54,6 +54,9 @@ const (
 	DefaultAllowUnprotectedTxs = false
 	// DefaultMaxOpenConnections represents the amount of open connections (unlimited = 0)
 	DefaultMaxOpenConnections = 0
+
+	// DefaultReturnDataLimit is maximum number of bytes returned from eth_call or similar invocations
+	DefaultReturnDataLimit = 100000
 )
 
 var evmTracers = []string{"json", "markdown", "struct", "access_list"}
@@ -115,6 +118,8 @@ type JSONRPCConfig struct {
 	EnableIndexer bool `mapstructure:"enable-indexer"`
 	// MetricsAddress defines the metrics server to listen on
 	MetricsAddress string `mapstructure:"metrics-address"`
+	// ReturnDataLimit defines maximum number of bytes returned from `eth_call` or similar invocations
+	ReturnDataLimit int64 `mapstructure:"return-data-limit"`
 }
 
 // TLSConfig defines the certificate and matching private key for the server.
@@ -217,6 +222,7 @@ func DefaultJSONRPCConfig() *JSONRPCConfig {
 		MaxOpenConnections:  DefaultMaxOpenConnections,
 		EnableIndexer:       false,
 		MetricsAddress:      DefaultJSONRPCMetricsAddress,
+		ReturnDataLimit:     DefaultReturnDataLimit,
 	}
 }
 
@@ -326,6 +332,7 @@ func GetConfig(v *viper.Viper) (Config, error) {
 			MaxOpenConnections: v.GetInt("json-rpc.max-open-connections"),
 			EnableIndexer:      v.GetBool("json-rpc.enable-indexer"),
 			MetricsAddress:     v.GetString("json-rpc.metrics-address"),
+			ReturnDataLimit:    v.GetInt64("json-rpc.return-data-limit"),
 		},
 		TLS: TLSConfig{
 			CertificatePath: v.GetString("tls.certificate-path"),

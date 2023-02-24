@@ -77,6 +77,9 @@ enable-indexer = {{ .JSONRPC.EnableIndexer }}
 # Prometheus metrics path: /debug/metrics/prometheus
 metrics-address = "{{ .JSONRPC.MetricsAddress }}"
 
+# Maximum number of bytes returned from eth_call or similar invocations.
+return-data-limit = {{ .JSONRPC.ReturnDataLimit }}
+
 ###############################################################################
 ###                             TLS Configuration                           ###
 ###############################################################################
