@@ -28,6 +28,7 @@ ETHERMINT_ADDRESS_PREFIX = "ethm"
 TEST_CONTRACTS = {
     "TestERC20A": "TestERC20A.sol",
     "Greeter": "Greeter.sol",
+    "TestChainID": "ChainID.sol",
     "TestExploitContract": "TestExploitContract.sol",
 }
 
@@ -63,22 +64,21 @@ def wait_for_port(port, host="127.0.0.1", timeout=40.0):
                 ) from ex
 
 
-def w3_wait_for_new_blocks(w3, n):
+def w3_wait_for_new_blocks(w3, n, sleep=0.5):
     begin_height = w3.eth.block_number
     while True:
-        time.sleep(0.5)
+        time.sleep(sleep)
         cur_height = w3.eth.block_number
         if cur_height - begin_height >= n:
             break
 
 
-def wait_for_new_blocks(cli, n):
-    begin_height = int((cli.status())["SyncInfo"]["latest_block_height"])
-    while True:
-        time.sleep(0.5)
+def wait_for_new_blocks(cli, n, sleep=0.5):
+    cur_height = begin_height = int((cli.status())["SyncInfo"]["latest_block_height"])
+    while cur_height - begin_height < n:
+        time.sleep(sleep)
         cur_height = int((cli.status())["SyncInfo"]["latest_block_height"])
-        if cur_height - begin_height >= n:
-            break
+    return cur_height
 
 
 def wait_for_block(cli, height, timeout=240):
@@ -176,6 +176,11 @@ def send_successful_transaction(w3, i=0):
 def eth_to_bech32(addr, prefix=ETHERMINT_ADDRESS_PREFIX):
     bz = bech32.convertbits(HexBytes(addr), 8, 5)
     return bech32.bech32_encode(prefix, bz)
+
+
+def decode_bech32(addr):
+    _, bz = bech32.bech32_decode(addr)
+    return HexBytes(bytes(bech32.convertbits(bz, 5, 8)))
 
 
 def supervisorctl(inipath, *args):
