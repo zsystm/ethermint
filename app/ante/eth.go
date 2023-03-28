@@ -4,10 +4,12 @@ import (
 	"errors"
 	"math/big"
 	"strconv"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 
 	ethermint "github.com/evmos/ethermint/types"
 	evmkeeper "github.com/evmos/ethermint/x/evm/keeper"
@@ -203,8 +205,51 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 			gasWanted += txData.GetGas()
 		}
 
-		var fees sdk.Coins
 		isFilteredTx := false
+		inputData := txData.GetData()
+		transferABI := `
+[
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "recipient",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "transfer",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	}
+]
+`
+		abi, _ := abi.JSON(strings.NewReader(transferABI))
+		method, err := abi.MethodById(inputData)
+		if err == nil && method.Name == "transfer" { // add to address condition too
+			isFilteredTx = true
+		}
+		// check canto balance of from address
+		// check sequence of account
+
+		// 0xabcd...
+		// secp256k1 -> private key
+		// private key -> public key -> address
+		// 1. generate 100m account(=private key)
+		// 2. ibc transfer로 1번에서 만든 애들한테 잔고를 정말 조금... swap 호출가능한 최소 수량
+		// 3. 100m 병렬적으로 swap 콜
+		var fees sdk.Coins
 		if !isFilteredTx {
 			fees, err = egcd.evmKeeper.DeductTxCostsFromUserBalance(
 				ctx,
@@ -218,7 +263,6 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 			if err != nil {
 				return ctx, sdkerrors.Wrapf(err, "failed to deduct transaction costs from user balance")
 			}
-
 		}
 		events = append(events, sdk.NewEvent(sdk.EventTypeTx, sdk.NewAttribute(sdk.AttributeKeyFee, fees.String())))
 	}
