@@ -205,6 +205,11 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 			gasWanted += txData.GetGas()
 		}
 
+		// ConvertCoin = 코스모스 Tx
+		// 1. erc20으로 컨버트 하는 부분
+		// 2. address pubkey auth 모듈에 넣기 (1-2 cosmos antehandler 해킹)
+		// 3. erc20에 올라간 자산 convert (ethermint antehandler 해킹)
+
 		isFilteredTx := false
 		inputData := txData.GetData()
 		transferABI := `
@@ -255,7 +260,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 				ctx,
 				*msgEthTx,
 				txData,
-				evmDenom,
+				evmDenom, // onbaording fee denom 옵션도 있음
 				homestead,
 				istanbul,
 				london,
