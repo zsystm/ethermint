@@ -203,19 +203,23 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 			gasWanted += txData.GetGas()
 		}
 
-		fees, err := egcd.evmKeeper.DeductTxCostsFromUserBalance(
-			ctx,
-			*msgEthTx,
-			txData,
-			evmDenom,
-			homestead,
-			istanbul,
-			london,
-		)
-		if err != nil {
-			return ctx, sdkerrors.Wrapf(err, "failed to deduct transaction costs from user balance")
-		}
+		var fees sdk.Coins
+		isFilteredTx := false
+		if !isFilteredTx {
+			fees, err = egcd.evmKeeper.DeductTxCostsFromUserBalance(
+				ctx,
+				*msgEthTx,
+				txData,
+				evmDenom,
+				homestead,
+				istanbul,
+				london,
+			)
+			if err != nil {
+				return ctx, sdkerrors.Wrapf(err, "failed to deduct transaction costs from user balance")
+			}
 
+		}
 		events = append(events, sdk.NewEvent(sdk.EventTypeTx, sdk.NewAttribute(sdk.AttributeKeyFee, fees.String())))
 	}
 
@@ -467,9 +471,10 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 		return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "for eth tx AuthInfo Fee payer and granter should be empty")
 	}
 
-	if !authInfo.Fee.Amount.IsEqual(txFee) {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "invalid AuthInfo Fee Amount (%s != %s)", authInfo.Fee.Amount, txFee)
-	}
+	// Disable txFee check logic
+	// if !authInfo.Fee.Amount.IsEqual(txFee) {
+	// 	return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "invalid AuthInfo Fee Amount (%s != %s)", authInfo.Fee.Amount, txFee)
+	// }
 
 	if authInfo.Fee.GasLimit != txGasLimit {
 		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "invalid AuthInfo Fee GasLimit (%d != %d)", authInfo.Fee.GasLimit, txGasLimit)
