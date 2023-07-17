@@ -28,6 +28,7 @@ type HandlerOptions struct {
 	MaxTxGasWanted         uint64
 	ExtensionOptionChecker ante.ExtensionOptionChecker
 	TxFeeChecker           ante.TxFeeChecker
+	Blacklist              []string
 }
 
 func (options HandlerOptions) validate() error {

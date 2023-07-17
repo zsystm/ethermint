@@ -29,6 +29,16 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 		return nil, err
 	}
 
+	blacklist := make(map[string]struct{}, len(options.Blacklist))
+	for _, str := range options.Blacklist {
+		addr, err := sdk.AccAddressFromBech32(str)
+		if err != nil {
+			return nil, fmt.Errorf("invalid bech32 address: %s", str)
+		}
+
+		blacklist[string(addr)] = struct{}{}
+	}
+
 	return func(
 		ctx sdk.Context, tx sdk.Tx, sim bool,
 	) (newCtx sdk.Context, err error) {
@@ -47,6 +57,12 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 						sdkerrors.ErrInvalidRequest,
 						"vesting messages are not supported",
 					)
+				}
+
+				for _, signer := range msg.GetSigners() {
+					if _, ok := blacklist[string(signer)]; ok {
+						return ctx, fmt.Errorf("signer is blocked: %s", signer.String())
+					}
 				}
 			}
 		}
