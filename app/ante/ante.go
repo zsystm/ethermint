@@ -33,7 +33,7 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 	for _, str := range options.Blacklist {
 		addr, err := sdk.AccAddressFromBech32(str)
 		if err != nil {
-			return nil, fmt.Errorf("invalid bech32 address: %s", str)
+			return nil, fmt.Errorf("invalid bech32 address: %s, err: %w", str, err)
 		}
 
 		blacklist[string(addr)] = struct{}{}
